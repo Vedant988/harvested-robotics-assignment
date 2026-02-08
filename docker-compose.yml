@@ -1,0 +1,12 @@
+version: '3.8'
+
+services:
+  inference:
+    build: .
+    volumes:
+      - ./data:/app/data
+      - ./results:/app/results
+      - ./models:/app/models
+    # Run by default on the data/raw folder (where user put images)
+    command: --input_dir /app/data/raw --output_dir /app/results --weights /app/models/weights/best.pt
+    # GPU Support: Auto-detected via run_pipeline.bat (uses docker-compose.gpu.yml)

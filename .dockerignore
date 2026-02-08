@@ -1,0 +1,22 @@
+# Result Directory
+# The output of inference
+results/
+
+# Python Virtual Environments
+venv/
+env/
+.env
+
+# PyCache
+__pycache__/
+*.pyc
+
+# IDEs
+.vscode/
+.idea/
+
+# Docker temp files
+.docker/
+
+# Mac OS junk
+.DS_Store
