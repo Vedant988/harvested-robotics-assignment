@@ -7,8 +7,8 @@ echo   Harvested Robotics - Weed Segmentation Pipeline
 echo ========================================================
 echo.
 echo Select Run Mode:
-echo [1] Docker Mode (Recommended - Zero Setup)
-echo [2] Local Python/VENV Mode (Requires Python installed)
+echo [1] Docker Mode (Zero Setup)
+echo [2] Local Python/VENV Mode (RecommendedRequires Python installed)
 echo.
 set /p mode="Enter choice (1 or 2): "
 
