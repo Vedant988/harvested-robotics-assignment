@@ -1,12 +1,12 @@
 # Harvested Robotics - Technical Report
 
 **Author:** [Vedant Badukale]  
-**Date:** February 8, 2026  
-**Repository:** [GitHub](https://github.com/Vedant988/harvested-robotics-assignment)
+**Date:** February 9, 2026  
+**Repository:** [https://github.com/Vedant988/harvested-robotics-assignment](https://github.com/Vedant988/harvested-robotics-assignment)
 
 ## 1. Problem Framing
 
-The core challenge of this project is **Instance-Level Segmentation for Laser Weeding**. Unlike generic segmentation tasks, agricultural robotics demands extremely high precision and safety guarantees. The system must operate on high-resolution field imagery to identify individual weed instances while strictly protecting crop plants (Cabbages) from any potential damage.
+The core challenge of this project is Instance-Level **Segmentation** for Laser Weeding. Unlike generic segmentation tasks, agricultural robotics demands extremely high precision and safety guarantees. The system must operate on high-resolution field imagery to identify individual weed instances while strictly protecting crop plants (Cabbages) from any potential damage all while adhering to the strict latency and **computational constraints** of edge hardware typical in agricultural deployment.
 
 ### Key Objectives:
 1.  **Zero Crop Damage**: Implement robust safety mechanisms to ensure the laser never targets a crop.
@@ -16,29 +16,56 @@ The core challenge of this project is **Instance-Level Segmentation for Laser We
 
 ---
 
-## 2. Methodology: Annotation & Active Learning
+## 2. Methodology: Active Learning & Data Pipeline
 
-To achieve high-quality results with limited data (50 raw images), I implemented an **Active Learning / Human-in-the-Loop** strategy using a custom-built annotation tool.
+To achieve high-fidelity results within the strict 5-day constraint and limited initial data (50 raw images), I implemented a **Human-in-the-Loop (HITL)** workflow. This approach utilized "weak" teacher models to accelerate annotation, allowing me to focus on *correcting* labels rather than creating them from scratch.
 
-### 2.1. Initial Bootstrap (Pre-Annotation)
-I started with a small, pre-annotated dataset of **32 Cabbage images** sourced from Roboflow. Using this, I trained an initial object detection model on Google Colab to establish a baseline for crop localization.
+### 2.1. Phase 1: Crop Detection (Global Safety Layer)
+**Objective:** Establish a robust "Safety Zone" detector for Cabbage plants.
 
-### 2.2. Custom Annotation Tool (SAM2 Integration)
-Instead of manually annotating the 50 provided high-resolution images from scratch, I developed a local annotation tool: **[SAM2_det_to_seg](https://github.com/Vedant988/SAM2_det_to_seg)**.
-*   **Workflow**:
-    1.  Loaded the initial Colab-trained model into the tool.
-    2.  Ran inference on the 50 new images to generate preliminary bounding boxes for crops.
-    3.  Integrated **SAM 2 (Segment Anything Model 2)** to convert these rough detections into precise segmentation masks automatically.
-    
-### 2.3. Human-in-the-Loop Correction
-The pre-annotated masks were reviewed manually. Since the initial model was trained on a different dataset, some corrections were necessary. This "human-in-the-Loop" process significantly accelerated the annotation phase compared to manual labelling.
+* **Bootstrap Strategy:**
+    1.  **Pre-Training:** Acquired a small, external dataset of **32 pre-annotated Cabbage images** from Roboflow and trained a baseline YOLOv8 model on Google Colab.
+    2.  **Inference-Assisted Annotation:** Ran inference on the 50 provided high-resolution images.
+    3.  **Human Correction:** Instead of drawing 100+ bounding boxes manually, I only corrected the model's predictions. This reduced annotation time by approximately 70%.
+    4.  **Cleaning:** Discarded 2 non-arable (road/noise) images from the provided set.
 
-### 2.4. Weed Segmentation Strategy (Tiled Active Learning)
-For weeds, which are much smaller and more numerous:
-1.  **Tiling**: I split each high-resolution image into **4x4 grids (16 tiles)** to maintain pixel density.
-2.  **SAM 2 Auto-Segment**: Uploaded these tiles to my local tool and used SAM 2 weights to identify and segment weed instances. The zero-shot performance of SAM 2 on these agricultural textures was extremely effective.
-3.  **Export**: The verified annotations were exported in YOLO format and combined with the crop dataset on Roboflow (Total: 82 Images).
+**Dataset Specifications (Model 1)**
+* **Base Model:** `YOLOv8l` (Transfer Learned)
+* **Training Results:** [View Logs & Curves](https://github.com/Vedant988/harvested-robotics-assignment/tree/main/training-results-detection-model-plants)
 
+| Dataset Split | Count | Preprocessing | Augmentations (Outputs: 3x) |
+| :--- | :--- | :--- | :--- |
+| **Train (90%)** | 180 | **Resize:** Fit 512x512 | **Flip:** Horizontal/Vertical |
+| **Valid (6%)** | 11 | **Contrast:** Hist. Eq. | **Rotate:** 90° (Clock/Counter/Inv) ±10° |
+| **Test (5%)** | 9 | **Auto-Orient:** Applied | **Shear:** ±7° (H/V) |
+| **Total** | **200** | | **Photometric:** Sat/Bright ±20%, Exp ±8%, Blur 1.1px |
+
+---
+
+### 2.2. Phase 2: Weed Segmentation (Local Targeting Layer)
+**Objective:** Precision instance segmentation for tiny weed structures.
+
+* **Tiling Strategy:**
+    Direct segmentation of tiny weeds on 4K images is inefficient. I sliced the 50 source images into **4x4 grids (16 tiles each)**, resulting in **800 local patches**.
+* **SAM 2 Automation:**
+    I utilized my custom tool, **[SAM2_det_to_seg](https://github.com/Vedant988/SAM2_det_to_seg)**, to automatically generate masks on these tiles.
+    * *Constraint:* Closely clustered weeds proved difficult to separate automatically. These edge cases were manually refined or discarded if ambiguous.
+* **Selection:**
+    From the 800 generated tiles, **608 high-quality tiles** containing distinct weed instances were selected for the final dataset.
+
+**Dataset Specifications (Model 2)**
+* **Base Model:** `YOLOv8l-seg` (Transfer Learned)
+* **Training Results:** [View Logs & Curves](https://github.com/Vedant988/harvested-robotics-assignment/tree/main/training-results-segmentation-model-weeds)
+
+| Dataset Split | Count | Preprocessing | Augmentations (Outputs: 3x) |
+| :--- | :--- | :--- | :--- |
+| **Train (97%)** | 1692 | **Resize:** Fit 512x512 | **Flip:** Horizontal/Vertical |
+| **Valid (1%)** | 22 | **Auto-Orient:** Applied | **Rotate:** 90° (Clock/Counter/Inv) ±7° |
+| **Test (1%)** | 22 | | **Shear:** ±4° (H/V) |
+| **Total** | **1736** | | **Photometric:** Sat ±16%, Exp ±12% |
+
+> **Note on Model Architecture (YOLOv8-Large):**
+> I deliberately selected the **Large (l)** variants of YOLOv8 for both tasks to maximize accuracy and safety guarantees during this prototype phase. While this increases computational load, standard Edge deployment workflows (TensorRT optimization/INT8 quantization) can be applied later to reduce latency without significant accuracy loss.
 ---
 
 ## 3. Model Architecture
@@ -47,7 +74,7 @@ The solution utilizes a **Dual-Stage Pipeline** combining global context with lo
 
 | Component | Model Architecture | Weights Path | Training Log | Purpose |
 | :--- | :--- | :--- | :--- | :--- |
-| **Crop Detector** | **YOLOv8** | `models/weights/best.pt` | `training-results-detction-model-plants/` | Global detection of Cabbage plants to establish safety zones. |
+| **Crop Detector** | **YOLOv8** | `models/weights/best.pt` | `training-results-detection-model-plants/` | Global detection of Cabbage plants to establish safety zones. |
 | **Weed Segmenter** | **YOLOv8l-seg** | `models/weights/yolov8l-seg.pt` | `training-results-segmentation-model-weeds/` | High-precision instance segmentation of weeds within local tiles. |
 
 ### 3.1. Training Strategy
