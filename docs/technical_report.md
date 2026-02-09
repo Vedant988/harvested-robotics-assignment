@@ -107,6 +107,8 @@ To solve the scale variance problem (large crops vs. tiny weeds) and ensuring sa
     3.  **Subtraction**: The global crop safety masks are mapped to the local tile coordinates and subtracted from the weed masks.
     4.  **Reconstruction**: Valid weed masks are stitched back into global coordinates.
 
+![Weed Segmentation Example](figures/weed_segmentation_only.png)
+
 ### 4.3. Laser Targeting (The "Red Dot")
 Merely segmenting the weed is insufficient; the laser must hit the stem.
 *   **Skeletonization**: The weed mask is reduced to a 1-pixel skeleton.
