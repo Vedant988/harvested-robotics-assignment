@@ -1,53 +1,69 @@
 # Instance-Level Weed & Crop Segmentation
 
-## Submission Overview
-This repository contains the complete solution for the **Harvested Robotics** technical assessment. The pipeline performs robust instance-level segmentation of crops and weeds, designed specifically for laser weeding applications.
+>  **Technical Report & Outcomes**
+>
+> For a detailed breakdown of the methodology, architectural decisions, and visual performance metrics, please refer to the **`docs/`** directory in the repository:
+> [**View Technical Report & Outcomes**](https://github.com/Vedant988/harvested-robotics-assignment/tree/main/docs)
 
-## Key Features
-*   **Pure Deep Learning**: Uses **YOLOv8-seg** for robust, high-resolution weed segmentation.
-*   **Precision Targeting**: Implements advanced skeleton-based targeting logic to hit the weed stem base (see [Detailed Strategy](README_inference.md)).
-*   **Safety Critical**: Implements **Circular Safety Exclusion Zones** around detected crops to ensure 0% crop damage from laser actuation.
-*   **Dockerized & Portable**: Fully containerized environment ensuring reproducibility across any machine.
-*   **Memory Optimized**: Uses **Dynamic Tiling** to process high-resolution field images without OOM errors.
+##  Submission Overview
+
+This repository contains the complete solution for the **Harvested Robotics** technical assessment R2. The pipeline performs robust instance-level segmentation of crops and weeds, designed specifically for laser weeding applications.
+
+## ✨ Key Features
+
+*  **Pure Deep Learning**
+    Utilizes **YOLOv8-seg** for robust, high-resolution weed and crop segmentation.
+*  **Precision Targeting**
+    Implements advanced skeleton-based targeting logic to identify the specific stem base of the weed (see [`README_inference.md`](https://github.com/Vedant988/harvested-robotics-assignment/blob/main/README_inference.md) for strategy details).
+*  **Safety Critical**
+    Implements **Circular Safety Exclusion Zones** around detected crops to ensure **0% crop damage** during laser actuation.
+*  **Dockerized & Portable**
+    Fully containerized environment ensuring guaranteed reproducibility across any machine.
+*  **Memory Optimized**
+    Uses **Dynamic Tiling** to process high-resolution field images without encountering Out-Of-Memory (OOM) errors.
 
 ---
 
-##  How to Run (One-Click)
-The submission includes an interactive script `run_pipeline.bat` that handles environment setup for you.
+## ⚡ How to Run (One-Click)
 
-### Prerequisite
-*   **Docker Desktop** (Recommended) - OR - **Python 3.8+**
+The submission includes an interactive script `run_pipeline.bat` that handles environment setup and execution for you.
+
+### Prerequisites
+* **Docker Desktop** (Option 1)
+ **OR**
+* **Python 3.8+** (Recommended Option 2)
 
 ### Steps
-1.  Place your test images in `data/raw/` (50 samples provided).
-2.  Type on terminal **`.\run_pipeline.bat`**.
-3.  Select your preferred mode:
-    *  ### Option 1: **Docker Mode** (Recommended for Guaranteed Reproducibility)
-- **Concept**: Runs inside an isolated container with all dependencies pre-installed by the base image.
-- **Pros**:
-    - **Guaranteed to Work**: Eliminates "it works on my machine" issues.
-    - **Zero Configuration**: Handles complex dependencies like CUDA, PyTorch, and OpenCV automatically.
-    - **Cross-Platform**: Consistent behavior on Windows, Linux, and Mac.
-- **Cons**:
-    - **Initial Download**: Docker must pull the `ultralytics` base image (~14GB) on the first run.
-    - **Virtualization**: Requires Docker Desktop to be running.
+1.  Place your test images in the `data/raw/` folder (11 samples are provided by default).
+2.  Open your terminal and run:
+    ```powershell
+    .\run_pipeline.bat
+    ```
+3.  Select your preferred mode when prompted:
 
-### Option 2: **Local Python / VENV Mode** (Recommended - Fast & Easy)
-- **Concept**: Automatically creates a local virtual environment and runs the pipeline.
-- **Pros**:
-    - **Fastest Setup**: No 14GB Docker image downloads. Ready in seconds.
-    - **Easy**: The script handles `venv` creation and dependency installation automatically.
-    - **Native Performance**: Runs directly on your hardware.
-- **Cons**:
-    - **Prerequisites**: Requires Python 3.8+ installed.
-    - **Dependency Risks**: Minimal (venv isolates dependencies), but relies on system drivers.
+#### Option 1: Docker Mode (Best for Reproducibility)
+Executes the pipeline within an isolated container to ensure an identical runtime environment to development.
+
+> **Note:** This method guarantees cross-platform consistency and automatically handles complex dependencies (CUDA, PyTorch). However, it requires **Docker Desktop** to be running and necessitates an initial download of the base image (~14GB).
+
+#### Option 2: Local Python / VENV Mode (Fastest & Recommended)
+Automatically provisions a local virtual environment (`venv`) to run the pipeline directly on your hardware.
+
+> **Note:** This is the quickest deployment method, bypassing virtualization overhead to start in seconds. It requires an existing **Python 3.8+** installation and relies on your local system drivers for GPU acceleration.
+
+---
 
 ##  Output Format
-Processed images are saved to the `results/` directory with the following visualization:
-*   **Blue Bounding Box**: YOLOv8 Crop Detection.
-*   **Cyan Circle**: Computed Safety Exclusion Zone (Radius = Half-Diagonal + Safety Margin).
-*   **Red Contour**: Weed Instances targeted for laser actuation (outside the safety zone).
 
-## Technical Constraints Handling
-*   **Unseen Data**: The pipeline is agnostic to image dimensions and lighting conditions (using dynamic thresholding).
-*   **Inference Speed**: Optimized for batch processing with CUDA support (if available).
+Processed images are saved to the `results/` directory with the following visualization logic:
+
+| Indicator | Visual Element | Description |
+| :--- | :--- | :--- |
+| **Crop** | **Blue Box** | YOLOv8 Crop Detection. |
+| **Safety Zone** | **Cyan Circle** | Computed Exclusion Zone (Radius = Half-Diagonal + Safety Margin). |
+| **Target** | **Red Contour** | Weed instances targeted for laser actuation (strictly outside the safety zone). |
+
+##  Technical Constraints Handling
+
+* **Unseen Data:** The pipeline is agnostic to image dimensions and lighting conditions, utilizing dynamic thresholding to adapt to various field environments.
+* **Inference Speed:** The architecture is optimized for batch processing with CUDA support (automatically detected if available).
