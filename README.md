@@ -29,17 +29,26 @@ This repository contains the complete solution for the **Harvested Robotics** te
 The submission includes an interactive script `run_pipeline.bat` that handles environment setup and execution for you.
 
 ### Prerequisites
+* **Git** (Required for cloning)
 * **Docker Desktop** (Option 1)
- **OR**
+    **OR**
 * **Python 3.8+** (Recommended Option 2)
 
 ### Steps
-1.  Place your test images in the `data/raw/` folder (11 samples are provided by default).
-2.  Open your terminal and run:
+1.  **Clone the repository and navigate to the project folder:**
+    ```powershell
+    git clone https://github.com/Vedant988/harvested-robotics-assignment.git
+    cd harvested-robotics-assignment
+    ```
+
+2.  *(Optional)* Place your test images in the `data/raw/` folder (11 samples are provided by default).
+
+3.  **Run the pipeline script:**
     ```powershell
     .\run_pipeline.bat
     ```
-3.  Select your preferred mode when prompted:
+
+4.  Select your preferred mode when prompted:
 
 #### Option 1: Docker Mode (Best for Reproducibility)
 Executes the pipeline within an isolated container to ensure an identical runtime environment to development.
