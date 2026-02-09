@@ -47,7 +47,6 @@ Thumbs.db
 Desktop.ini
 
 # --- Project Specific: Outputs & Logs ---
-results/
 inference_results/
 debug_exg_output/
 *.log
